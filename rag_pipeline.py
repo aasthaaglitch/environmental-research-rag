@@ -1,0 +1,34 @@
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import RetrievalQA
+
+
+def build_rag(pdf_path):
+
+    loader = PyPDFLoader(pdf_path)
+    documents = loader.load()
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+
+    docs = splitter.split_documents(documents)
+
+    embeddings = OpenAIEmbeddings()
+
+    vectorstore = FAISS.from_documents(docs, embeddings)
+
+    retriever = vectorstore.as_retriever()
+
+    llm = ChatOpenAI(temperature=0)
+
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=retriever
+    )
+
+    return qa_chain
